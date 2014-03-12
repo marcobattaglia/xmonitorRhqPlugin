@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<plugin
+          name="MyCustomJmx"
+          displayName="Myapp MBeans Plugin"
+          package="com.myapp.services.plugin"
+          xmlns="urn:xmlns:rhq-plugin"
+          xmlns:c="urn:xmlns:rhq-configuration">
+ 
+        <depends plugin="JBossAS7" useClasses="true"/>
+ 
+        <service name="Myapp Services"
+                 discovery="org.jboss.on.plugins.xmonitor.ApplicationMBeansDiscoveryComponent"
+                 class="org.jboss.on.plugins.xmonitor.ApplicationMBeansComponent"
+                 description="Container for Myapp Services"
+                 singleton="true">
+ 
+          <runs-inside>
+            <!-- The type of the server the application is running on -->
+            <parent-resource-type name="JBossAS7 Standalone Server" plugin="JBossAS7"/>
+            <parent-resource-type name="Managed Server" plugin="JBossAS7"/>
+          </runs-inside>
+ 
+          <plugin-configuration>
+            <c:simple-property name="beansQueryString" readOnly="true" default="java.lang:type=Memory"/>
+            <c:simple-property name="newResourceKey" readOnly="true" default="myappServices"/>
+            <c:simple-property name="newResourceName" readOnly="true" default="Myapp Services"/>
+            <c:simple-property name="newResourceDescription" readOnly="true" default="Container for Myapp Services"/>
+          </plugin-configuration>
+ 
+          <!--
+            ApplicationMBeansComponent can be the parent of any JMXComponent (JMX plugin). For example, it's possible
+            to monitor a MBean with no line of Java code thanks to the MBeanResourceComponent facility. Plugin authors
+            only have to configure metrics (mapped to MBeans attributes) and operations (MBeans operations).
+          -->
+          <service name="HelloService" discovery="org.rhq.plugins.jmx.MBeanResourceDiscoveryComponent"
+                   class="org.rhq.plugins.jmx.MBeanResourceComponent" singleton="true">
+            <plugin-configuration>
+              <c:simple-property name="objectName" default="java.lang:type=Memory" readOnly="true"/>
+            </plugin-configuration>
+            <operation name="gc">              
+            </operation>
+          </service>
+ 
+        </service>
+ 
+      </plugin>
+
+
+

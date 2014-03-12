@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<plugin
+          name="JVMMBeansPlugin"
+          displayName="JVM MBeans Plugin"
+          package="org.jboss.on.plugins.xmonitor"
+          xmlns="urn:xmlns:rhq-plugin"
+          xmlns:c="urn:xmlns:rhq-configuration">
+ 
+        <depends plugin="JBossAS7" useClasses="true"/>
+ 
+          <!--
+            ApplicationMBeansComponent can be the parent of any JMXComponent (JMX plugin). For example, it's possible
+            to monitor a MBean with no line of Java code thanks to the MBeanResourceComponent facility. Plugin authors
+            only have to configure metrics (mapped to MBeans attributes) and operations (MBeans operations).
+          -->
+          <service name="XMonitorJVM" discovery="org.rhq.plugins.jmx.MBeanResourceDiscoveryComponent"
+                   class="org.rhq.plugins.jmx.MBeanResourceComponent" singleton="true">
+           <runs-inside>
+            <!-- The type of the server the application is running on -->
+            <parent-resource-type name="JBossAS7 Standalone Server" plugin="JBossAS7"/>
+            <parent-resource-type name="Managed Server" plugin="JBossAS7"/>
+          </runs-inside>
+            <plugin-configuration>
+              <c:simple-property name="objectName" default="java.lang:type=Memory" readOnly="true"/>
+            </plugin-configuration>
+            <operation name="gc">
+              <results>
+                <c:simple-property name="operationResult" type="string"/>
+              </results>
+            </operation>
+          </service>
+ 
+       
+ 
+      </plugin>

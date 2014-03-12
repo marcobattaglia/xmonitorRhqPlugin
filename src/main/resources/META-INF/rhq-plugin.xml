@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<plugin
+          name="CustomXMonitor"
+          displayName="CustomXMonitor"
+          package="org.rhq.modules.plugins.xmonitor"
+          xmlns="urn:xmlns:rhq-plugin"
+          xmlns:c="urn:xmlns:rhq-configuration">
+ 
+        <depends plugin="JBossAS7" useClasses="true"/>
+ 
+        <service name="CustomXMonitor"
+                 discovery="org.rhq.modules.plugins.xmonitor.OpenshiftDiscovery"
+                 class="org.rhq.modules.plugins.xmonitor.OpenshiftComponent"
+                 description="Container forCustomXMonitor Services"
+                 >
+ 
+          <runs-inside>
+            <!-- The type of the server the application is running on -->
+            <parent-resource-type name="JBossAS7 Standalone Server" plugin="JBossAS7"/>
+            <parent-resource-type name="Managed Server" plugin="JBossAS7"/>
+          </runs-inside>
+     <plugin-configuration>
+     <c:group name="general"
+     displayName="General">
+     <c:simple-property
+                  name="username"
+                  required="true"
+                  description="The user name to connect by JMX remoting" 
+                  default="admin"
+                  />
+       <c:simple-property
+                  name="password"
+                  type="password"
+                  required="true"
+                  description="The password name to connect by JMX remoting" 
+                  default="pippo"
+                  />
+      <c:simple-property
+                  name="host"
+                  required="true"
+                  description="The host name to connect by JMX remoting" 
+                  default="127.0.0.1"
+                  />
+     <c:simple-property
+                  name="port"
+                  required="true"
+                  description="The port number to connect by JMX remoting" 
+                  default="9999"
+                  />
+      <c:simple-property
+                  name="discoveryFilter"
+                  required="true"
+                  readOnly="true"
+                  description="The JMX query filter (with * wildcard) used to discovery resources jboss.as:deployment=*,subdeployment=*,subsystem=web;jboss.as:deployment=*,subsystem=web" 
+                  default="jboss.as:deployment=*,subdeployment=*,subsystem=web;jboss.as:deployment=*,subsystem=web"
+                  />
+     <c:simple-property
+                  name="bindingFilter"
+                  required="false"
+                  readOnly="true"
+                  description="In some case (i.e. datasource) discovery filter help me to find resources, but metric are collected by bindingFilter)" 
+                  />
+     <c:simple-property                  
+                  name="frequency"
+                  type="integer"
+                  required="true"
+                  readOnly="true"
+                  description="The frequncy of sampling. Map function runs every (frequency) seconds" 
+                  default="3000"
+                  />
+     <c:simple-property
+                  name="keyProperty"
+                  required="true"
+                  readOnly="true"
+                  description="Among keyProperty of ObjectName it identifies a unique id of the resource" 
+                  default="deployment.subdeployment"
+                  />
+     <c:simple-property
+                  name="mapCode"
+                  type="longString"
+                  required="true"
+                  readOnly="false"
+                  description="The function code that runs for each map phase (in groovy)" 
+                  default="mapCode"
+                  />
+     <c:simple-property
+     			  type="longString"
+                  name="reduceCode"
+                  required="true"
+                  readOnly="false"
+                  description="The function code that runs each time a getValues is called by central monitoring server"
+                  default="reduceCode" 
+                  />
+                
+         </c:group>
+     </plugin-configuration>
+      <metric property="number"
+              displayName="displayName Number"
+              defaultOn="true"
+              displayType="summary"
+              defaultInterval="30000"
+              description="description: Emits a  number"/>
+    <resource-configuration>
+    <c:group name="general">
+     <c:simple-property
+                  name="keyProp"
+                  required="true"
+                  readOnly="true"
+                  description="A dummy prop" />
+                  </c:group>
+                   
+     
+     </resource-configuration>
+
+   
+  </service>
+
+</plugin>
