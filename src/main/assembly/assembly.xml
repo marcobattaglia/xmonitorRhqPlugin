@@ -1,0 +1,23 @@
+<assembly>
+	<id>bin</id>
+	<!-- Generates a zip package containing the needed files -->
+	<formats>
+		<format>jar</format>
+	</formats>
+	<dependencySets>
+		<dependencySet>
+
+			<includes>
+				<include>org.codehaus.groovy:groovy-all:*</include>
+			</includes>
+			<excludes>
+				<exclude>*:rhq-jboss-as-7-plugin</exclude>
+			</excludes>
+			<useProjectArtifact>false</useProjectArtifact>
+			<unpack>false</unpack>
+			
+		</dependencySet>
+	</dependencySets>
+
+
+</assembly>
