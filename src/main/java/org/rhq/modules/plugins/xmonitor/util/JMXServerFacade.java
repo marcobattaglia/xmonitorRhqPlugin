@@ -1,6 +1,7 @@
 package org.rhq.modules.plugins.xmonitor.util;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Hashtable;
@@ -33,25 +34,68 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.rhq.core.domain.configuration.Configuration;
+import org.rhq.core.pluginapi.inventory.ResourceDiscoveryContext;
+import org.rhq.modules.plugins.xmonitor.XMonitorDiscovery;
 
 
 public class JMXServerFacade {
      static Log log = LogFactory.getLog(JMXServerFacade.class);
-     static String host = System.getProperty("java.rmi.server.hostname");
-     static String port = "1099";
+     static public String host="127.0.0.1";
+//     static public String port="9999";
+     static public String port;
+     static public String uname="admin";
+     static public String pwd="pippo";
      static MBeanServerConnection  server;
-     static boolean initialized = false;
+     static AtomicBoolean initialized = new AtomicBoolean(false);
      static AtomicBoolean connYetResetted= new AtomicBoolean(false);
-     static Configuration pluginConfiguration;
+     static public Configuration pluginConfiguration;
+     static{
+    	 log.info("Mi sto inizializzando");
+//    	 ResourceDiscoveryContext discoveryContext = XMonitorDiscovery.staticContext;
+//    	 JMXServerFacade.uname = discoveryContext.getParentResourceContext().getPluginConfiguration().getSimpleValue("user");
+//      	  JMXServerFacade.pwd = discoveryContext.getParentResourceContext().getPluginConfiguration().getSimpleValue("password");
+//      	  JMXServerFacade.host = discoveryContext.getParentResourceContext().getPluginConfiguration().getSimpleValue("hostname");
+//      	  JMXServerFacade.port = discoveryContext.getDefaultPluginConfiguration().getSimpleValue("port");
+    	 
+    	 try{
+    		 throw new Exception("Stack Trace");
+    	 }
+    	 catch(Exception ex){
+    		 ex.printStackTrace();
+    	 }
+     }
      
+     
+     
+     
+     public static MBeanServerConnection getConn() throws Exception{
+    	 MBeanServerConnection connection= null;
+    	if(server==null){
+	    	String urlString = "service:jmx:remoting-jmx://" + host + ":" + port;
+	     	JMXServiceURL serviceURL = new JMXServiceURL(urlString);
+	  		Hashtable h = new Hashtable();	
+	  		String[] credentials = new String[] { uname.trim(), pwd.trim() };
+	  		h.put("jmx.remote.credentials", credentials);
+	  		JMXConnector jmxConnector = JMXConnectorFactory.connect(serviceURL, h);
+	  		connection = jmxConnector
+	  				.getMBeanServerConnection();
+	  		server = connection;
+    	}
+    	
+    	
+  		return server;
+     }
      
      
      public static void prepareConnection(Configuration...config) throws IOException{
     	if (server!= null){
      		return;
      	}
-    	if(config!=null && config.length!=0){
+    	if(config!=null && config.length!=0 && config[0]!=null){
     		JMXServerFacade.pluginConfiguration = config[0];
+    	}
+    	if(JMXServerFacade.pluginConfiguration==null){
+    		return;
     	}
     	
     	String userName = JMXServerFacade.pluginConfiguration.getSimpleValue("username");
@@ -75,36 +119,7 @@ public class JMXServerFacade {
         return executeSample(new ObjectName(objectName), measure, path);    	 
      }
      
-     static public void executeInitialDiscovery() throws IOException{
-         if (!initialized){             
-         LinkedList<ObjectName> managers = new LinkedList<ObjectName>();
-         managers = JMXServerFacade.discover("XMonitor:name=*,service=xmonitor,type=manager");
-         for(ObjectName oname : managers){
-             try {
-                 log.info("I'm invoking discovery on " + oname.getCanonicalName());
-                server.invoke(oname, "discovery", null, null);
-                Thread.sleep(5000);
-            } catch (InstanceNotFoundException e) {
-                // TODO Auto-generated catch block
-                log.error("Impossible to execute Initial discovery on:" + oname.toString());
-                e.printStackTrace();
-            } catch (ReflectionException e) {
-                log.error("Impossible to execute Initial discovery on:" + oname.toString());
-                e.printStackTrace();
-            } catch (MBeanException e) {
-                log.error("Impossible to execute Initial discovery on:" + oname.toString());
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                log.error("Impossible to execute Initial discovery on:" + oname.toString());
-                e.printStackTrace();
-            } catch (IOException e) {
-				resetConnection();
-			}
-             
-         }
-         }
-         
-     }
+     
      static synchronized void resetConnection() throws IOException{
     	 if(connYetResetted.get()){
     		 throw new IOException("I cannot reset connection to JMX Server");
@@ -121,8 +136,15 @@ public class JMXServerFacade {
      
      
      static public double executeSample(ObjectName objectName, String measure, String...path)throws Exception{
-    	 Date startTime = new Date();    	 
-    	 Object value = server.getAttribute(objectName, measure.trim());
+    	 Date startTime = new Date();    
+    	 Object value = null;
+    	 server = JMXServerFacade.getConn();
+    	 try{
+    		 value = server.getAttribute(objectName, measure.trim());
+    	 }
+    	 catch(NullPointerException NPE){
+    		  log.error("Impossible retrieving data from jboss");
+    	 }
     	 //log.warn("2) querying ObjectName:" +objectName+ " attribute:" + measure + " path: "+path[0]);
     	 double toReturn = 0d;
     	 try{
@@ -140,30 +162,31 @@ public class JMXServerFacade {
      }
       
      static public String getMeasures(ObjectName objectName)throws Exception{
-    	 Date startTime = new Date();    	 
+    	 Date startTime = new Date();  
+    	 server = JMXServerFacade.getConn();
     	 Object r = server.getAttribute(objectName, "Measures");
-    	 log.trace(" Sampling duration: " + (new Date().getTime() - startTime.getTime()));
+    	 log.info(" Object: " + objectName +" value: " + r.toString()+ " Sampling duration: " + (new Date().getTime() - startTime.getTime()));
     	 return r.toString();
     	 
      }
      
      
 	 
-	 public static LinkedList<ObjectName> discover(String filter,  String...criteria) throws IOException{
+	 public static LinkedList<ObjectName> discover(String filter,  String...criteria) throws Exception{
 		    log.info("I'm discovering with this filter: " + filter);
 		    
 		    //added a double container to manage multiple filter separated by ;	    
 		    //LinkedList<LinkedList<ObjectName>> toReturn_outer = new LinkedList<LinkedList<ObjectName>>();
 		    LinkedList<ObjectName> toReturn_inner = new LinkedList<ObjectName>();
 	    	ObjectName objectFilter = null;
-	    	
+	    	server = JMXServerFacade.getConn();
 	    	//you can have multiple filters separated by ;
 	    	for(String currentFilter : filter.split(";")){
 	    	    //LinkedList<ObjectName> toReturn_inner = new LinkedList<ObjectName>();
 				try {
 					objectFilter = new ObjectName(currentFilter);
 					Set<ObjectName> mbeans = server.queryNames(objectFilter, null);
-					log.debug("Number of object discovered to monitor is: " + mbeans.size());
+					log.info("Number of object discovered to monitor is: " + mbeans.size());
 		        
 					//cycle for each single filter
     		        for (ObjectName on : mbeans) {
@@ -196,8 +219,10 @@ public class JMXServerFacade {
 	 
 
     @SuppressWarnings("unchecked")
-	public static <T> LinkedList<T> discover(String filter, Class<T> c, String...criteria) throws IOException{
+	public static <T> LinkedList<T> discover(String filter, Class<T> c, String...criteria) throws Exception{
     	LinkedList<T> toReturn = new LinkedList<T>();
+    	server = JMXServerFacade.getConn();
+   	 
     	ObjectName objectFilter = null;
 			try {
 				objectFilter = new ObjectName(filter);

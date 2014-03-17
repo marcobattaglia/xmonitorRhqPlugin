@@ -34,8 +34,6 @@ public class OpenshiftComponent extends StandaloneASComponent<BaseComponent<?>> 
 {
     private final Log log = LogFactory.getLog(this.getClass());
 
-    private static final int CHANGEME = 1; // TODO remove or change this
-
     private ResourceContext context;
     private StandaloneASComponent parent;
 
@@ -59,7 +57,7 @@ public class OpenshiftComponent extends StandaloneASComponent<BaseComponent<?>> 
         Configuration conf = context.getPluginConfiguration();
         parent = (StandaloneASComponent) context.getParentResourceComponent();
         // TODO add code to start the resource / connection to it
-
+        
 
     }
 
@@ -83,6 +81,10 @@ public class OpenshiftComponent extends StandaloneASComponent<BaseComponent<?>> 
     public  void getValues(MeasurementReport report, Set<MeasurementScheduleRequest> metrics) throws Exception {
 
          for (MeasurementScheduleRequest req : metrics) {
+        	
+        	 
+        	 
+        	 
             if (req.getName().equals("appuid")) {
 
 //                Address addr = new Address("core-service=platform-mbean,type=runtime");
